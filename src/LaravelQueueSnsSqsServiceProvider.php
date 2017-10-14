@@ -15,7 +15,7 @@ class LaravelQueueSnsSqsServiceProvider extends ServiceProvider {
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__.'../config/snssqs.php',
+            __DIR__.'/../config/snssqs.php',
             'queue.connections.snssqs'
         );
     }
