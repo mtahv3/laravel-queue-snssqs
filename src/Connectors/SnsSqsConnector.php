@@ -4,6 +4,7 @@ namespace Mtahv3\LaravelQueueSnsSqs\Connectors;
 
 use Aws\Sqs\SqsClient;
 use Illuminate\Queue\Connectors\SqsConnector;
+use Illuminate\Support\Arr;
 use Mtahv3\LaravelQueueSnsSqs\Queue\SnsSqsQueue;
 
 class SnsSqsConnector extends SqsConnector {
