@@ -29,11 +29,10 @@ class LaravelQueueSnsSqsServiceProvider extends ServiceProvider {
     {
         /** @var \Illuminate\Queue\QueueManager $queue */
         $queue = $this->app['queue'];
+        
 
-        $connector = new SnsSqsConnector();
-
-        $queue->addConnector('sqssns', function () use ($connector) {
-            return $connector;
+        $queue->addConnector('snssqs', function () {
+            return new SnsSqsConnector();
         });
     }
 
