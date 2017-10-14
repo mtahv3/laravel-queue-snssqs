@@ -1,0 +1,27 @@
+{
+    "name": "mtahv3/laravel-queue-snssqs",
+    "description": "Provides ability to handle Laravel Queues from a fan-out SNS/SQS pattern",
+    "type": "laravel-package",
+    "require": {
+        "php": ">=7.0",
+        "illuminate/database": "5.5.*",
+        "illuminate/support": "5.5.*",
+        "illuminate/queue": "5.5.*",
+        "aws/aws-sdk-php": "^3.36"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Mtahv3\\LaravelQueueSnsSqs\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mtahv3\\LaravelQueueSnsSqs\\LaravelQueueSnsSqsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
