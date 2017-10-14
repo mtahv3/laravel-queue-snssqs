@@ -9,6 +9,16 @@ use Illuminate\Queue\Jobs\SqsJob;
 class SnsSqsJob extends SqsJob {
 
     /**
+     * Get the name of the queued job class.
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->payload()['TopicArn'];
+    }
+
+    /**
      * Fire the job.
      *
      * @return void
@@ -40,7 +50,7 @@ class SnsSqsJob extends SqsJob {
         $prefix = 'App\\Jobs\\';
         $className = $prefix.$topic;
 
-        return $this->container->make($className, $message);
+        return $this->container->make($className, ['data'=>$message]);
     }
 
     protected function getTopicFromPayload($payload)
