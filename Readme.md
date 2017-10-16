@@ -1,7 +1,7 @@
 # Laravel Queue Driver For SNS
 
 In utilizing a fan-out pattern with SNS and SQS the default Laravel
- Queue system fails as it expects a structured method from the queue
+ Queue system fails as it expects a structured message from the queue
  that's been serialized by Laravel itself. 
  
 This queue driver will allow you to take raw JSON data from an SQS
