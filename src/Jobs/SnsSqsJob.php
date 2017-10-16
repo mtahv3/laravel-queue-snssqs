@@ -2,11 +2,35 @@
 
 namespace Mtahv3\LaravelQueueSnsSqs\Jobs;
 
+use Aws\Sqs\SqsClient;
+use Illuminate\Container\Container;
 use Illuminate\Queue\CallQueuedHandler;
 use Illuminate\Queue\InvalidPayloadException;
 use Illuminate\Queue\Jobs\SqsJob;
 
 class SnsSqsJob extends SqsJob {
+
+    /**
+     * @var \Illuminate\Support\Collection
+     */
+    protected $routes;
+
+    /**
+     * Create a new job instance.
+     *
+     * @param  \Illuminate\Container\Container  $container
+     * @param  \Aws\Sqs\SqsClient  $sqs
+     * @param  array   $job
+     * @param  string  $connectionName
+     * @param  string  $queue
+     * @return void
+     */
+    public function __construct(Container $container, SqsClient $sqs, array $job, $connectionName, $queue, $routes)
+    {
+        parent::__construct($container, $sqs, $job, $connectionName, $queue);
+
+        $this->routes = collect($routes);
+    }
 
     /**
      * Get the name of the queued job class.
@@ -47,8 +71,15 @@ class SnsSqsJob extends SqsJob {
 
     protected function getTopicClass($topic, $message)
     {
-        $prefix = 'App\\Jobs\\';
-        $className = $prefix.$topic;
+        $filtered=$this->routes->filter(function($routeClass, $routeTopic) use ($topic){
+            if(fnmatch($routeTopic, $topic)) return true;
+        });
+
+        if($filtered->count()){
+            $className=$filtered->first();
+        }else{
+            $className = 'App\\Jobs\\'.$topic;
+        }
 
         return $this->container->make($className, ['data'=>$message]);
     }

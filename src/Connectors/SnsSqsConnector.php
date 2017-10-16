@@ -23,7 +23,10 @@ class SnsSqsConnector extends SqsConnector {
         }
 
         return new SnsSqsQueue(
-            new SqsClient($config), $config['queue'], $config['prefix'] ?? ''
-        );
+            new SqsClient($config),
+                $config['queue'],
+                $config['prefix'] ?? '',
+                $config['routes']
+            );
     }
 }
