@@ -63,6 +63,11 @@ if you prefix `prod` and `test` to your topic names, you could
 write one route using wildcard to map both prod and test with a
 single line.
 
+By default, if there is no route set in the configuration file, 
+the driver will attempt to map the TopicName to the same class
+name in App\Jobs. For example a TopicName of UserCreated would
+attempt to map to App\Jobs\UserCreated::class if there's no
+ entry in the `routes` array.
 
 
 
