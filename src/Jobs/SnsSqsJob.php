@@ -105,4 +105,21 @@ class SnsSqsJob extends SqsJob {
         }
     }
 
+    public function failed($e)
+    {
+        $this->markAsFailed();
+
+        $rawPayload = $this->payload();
+
+        $topic = $this->getTopicFromPayload($rawPayload);
+
+        $message = $this->getDecodedMessageFromPayload($rawPayload);
+
+        $topicClass = $this->getTopicClass($topic, $message);
+
+        if (method_exists($topicClass, 'failed')) {
+            $topicClass->failed($e);
+        }
+    }
+
 }
