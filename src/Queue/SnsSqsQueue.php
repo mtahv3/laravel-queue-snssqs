@@ -39,7 +39,7 @@ class SnsSqsQueue extends SqsQueue {
             'AttributeNames' => ['ApproximateReceiveCount'],
         ]);
 
-        if (count($response['Messages']) > 0) {
+        if (! is_null($response['Messages']) && count($response['Messages']) > 0) {
             return new SnsSqsJob(
                 $this->container,
                 $this->sqs,
