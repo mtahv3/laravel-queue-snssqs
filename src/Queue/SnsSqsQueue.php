@@ -36,7 +36,10 @@ class SnsSqsQueue extends SqsQueue {
     {
         $response = $this->sqs->receiveMessage([
             'QueueUrl' => $queue = $this->getQueue($queue),
-            'AttributeNames' => ['ApproximateReceiveCount'],
+            'AttributeNames' => [
+                'ApproximateReceiveCount',
+                'SentTimestamp',
+            ],
         ]);
 
         if (! is_null($response['Messages']) && count($response['Messages']) > 0) {
