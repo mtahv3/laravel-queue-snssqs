@@ -3,12 +3,17 @@
 namespace Mtahv3\LaravelQueueSnsSqs\Jobs;
 
 use Aws\Sqs\SqsClient;
+use DateTimeInterface;
 use Illuminate\Container\Container;
 use Illuminate\Queue\CallQueuedHandler;
 use Illuminate\Queue\InvalidPayloadException;
 use Illuminate\Queue\Jobs\SqsJob;
+use Illuminate\Support\InteractsWithTime;
+use ReflectionClass;
 
 class SnsSqsJob extends SqsJob {
+
+    use InteractsWithTime;
 
     /**
      * @var \Illuminate\Support\Collection
@@ -30,6 +35,68 @@ class SnsSqsJob extends SqsJob {
         parent::__construct($container, $sqs, $job, $connectionName, $queue);
 
         $this->routes = collect($routes);
+        $this->buildJob();
+    }
+
+    protected function buildJob()
+    {
+        $payload = $this->payload();
+        $className = $this->findTopicClassFromRoutes($this->getTopicFromPayload($payload));
+        $jobClass = (new ReflectionClass($className))->newInstanceWithoutConstructor();
+        $payloadBody = [ 
+            'uuid' => $payload['MessageId'],
+            'maxTries' => $jobClass->tries ?? null,
+            'maxExceptions' => $jobClass->maxExceptions ?? null,
+            'backoff' => $this->getJobBackoff($jobClass),
+            'timeout' => $jobClass->timeout ?? null,
+            'retryUntil' => $this->getJobExpiration($jobClass)
+        ];
+
+        $payload = array_merge($payloadBody, $payload);
+
+        $this->job['Body'] = json_encode($payload);
+    }
+
+    /**
+     * Get the backoff for an object-based queue handler.
+     *
+     * @param  mixed  $job
+     * @return mixed
+     */
+    protected function getJobBackoff($job)
+    {
+        if (! method_exists($job, 'backoff') && ! isset($job->backoff)) {
+            return;
+        }
+
+        return collect($job->backoff ?? $job->backoff())
+            ->map(function ($backoff) {
+                return $backoff instanceof DateTimeInterface
+                                ? $this->secondsUntil($backoff) : $backoff;
+            })->implode(',');
+    }
+
+
+    /**
+     * Get the expiration timestamp for an object-based queue handler.
+     *
+     * @param  mixed  $job
+     * @return mixed
+     */
+    protected function getJobExpiration($job)
+    {
+        if (! method_exists($job, 'retryUntil') ) {
+            return;
+        }
+        $now = time();
+        $expiration = $job->retryUntil();
+
+        $expireTimestamp = $expiration instanceof DateTimeInterface
+                        ? $expiration->getTimestamp() : $expiration;
+        $timeDifference = abs($expireTimestamp - $now);
+        $messageCreatedTime =  (int)($this->job['Attributes']['SentTimestamp'] / 1000);
+
+        return $messageCreatedTime+$timeDifference;
     }
 
     /**
@@ -56,7 +123,7 @@ class SnsSqsJob extends SqsJob {
 
         $message = $this->getDecodedMessageFromPayload($rawPayload);
 
-        $topicClass = $this->getTopicClass($topic, $message);
+        $topicClass = $this->makeTopicClass($topic, $message);
 
         $serializedClass = serialize($topicClass);
 
@@ -64,12 +131,10 @@ class SnsSqsJob extends SqsJob {
             'command'=>$serializedClass
         ];
 
-        $class = CallQueuedHandler::class;
-
-        ($this->instance = $this->resolve($class))->call($this, $data);
+        ($this->instance = $this->resolve(CallQueuedHandler::class))->call($this, $data);
     }
 
-    protected function getTopicClass($topic, $message)
+    protected function findTopicClassFromRoutes($topic)
     {
         $filtered=$this->routes->filter(function($routeClass, $routeTopic) use ($topic){
             if(fnmatch($routeTopic, $topic)) return true;
@@ -80,6 +145,13 @@ class SnsSqsJob extends SqsJob {
         }else{
             $className = 'App\\Jobs\\'.$topic;
         }
+
+        return $className;
+    }
+
+    protected function makeTopicClass($topic, $message)
+    {
+        $className = $this->findTopicClassFromRoutes($topic);
 
         return $this->container->make($className, ['data'=>$message]);
     }
@@ -115,11 +187,10 @@ class SnsSqsJob extends SqsJob {
 
         $message = $this->getDecodedMessageFromPayload($rawPayload);
 
-        $topicClass = $this->getTopicClass($topic, $message);
+        $topicClass = $this->makeTopicClass($topic, $message);
 
         if (method_exists($topicClass, 'failed')) {
             $topicClass->failed($e);
         }
     }
-
 }

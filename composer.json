@@ -3,10 +3,9 @@
     "description": "Provides ability to handle Laravel Queues from a fan-out SNS/SQS pattern",
     "type": "laravel-package",
     "require": {
-        "php": "^7.1.3",
-        "illuminate/database": "5.8.*",
-        "illuminate/support": "5.8.*",
-        "illuminate/queue": "5.8.*",
+        "illuminate/database": "8.*",
+        "illuminate/support": "8.*",
+        "illuminate/queue": "8.*",
         "aws/aws-sdk-php": "~3.0"
     },
     "license": "MIT",
